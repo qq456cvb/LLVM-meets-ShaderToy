@@ -1,6 +1,7 @@
 import Control.Monad  
 import Data.Char
 import Data.Typeable
+import Data.Map
 
 data Token =  
       Def
@@ -8,6 +9,8 @@ data Token =
     | Identy String
     | Number Float
     | Kwd Char deriving (Show)
+
+precedence = fromList [('<', 10), ('>', 10), ('+', 20), ('-', 20), ('*', 30)]
 
 lexer_ident :: String -> String -> [Token]
 lexer_ident buffer content = 
@@ -57,15 +60,22 @@ parse_primary content =
                     _ -> error "unknown token"
     where e = parse_expr t
 
-parse_expr :: [Expr] -> Expr
+parse_expr :: [Token] -> Expr
 parse_expr content = 
-    case content of prim:stream -> parse_bin_rhs 0 lhs stream
+    case content of prim:stream -> parse_bin 0 lhs stream
     where lhs = parse_primary prim
 
-
-parse_bin_rhs expr_prec lhs stream =
+parse_bin :: Int -> Expr -> [Token] -> Expr
+parse_bin prec lhs content =
+    case content of Kwd c:stream -> if member c precedence then
+                                        if precedence ! c < precedence ! prec then lhs 
+                                        else let rhs = parse_primary stream
+                                                in if 
+                                    else lhs
+                    _ -> lhs
     
 
 main = do 
     let tokens = lexer "#comment \n hel77lo67 def 3456 yy "
-        in print $ parse_primary tokens
+        -- in print $ parse_primary tokens
+        in print $ precedence ! '+' < precedence ! '/'
