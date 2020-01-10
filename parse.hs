@@ -39,7 +39,8 @@ lexer content =
                     c:stream -> if isAlpha c then lexer_ident [c] stream
                                 else if isNumber c then lexer_num [c] stream
                                 else if c == '#' then lexer_comment stream
-                                else Kwd c:lexer stream
+                                else if c /= ' ' then Kwd c:lexer stream
+                                    else lexer stream
                     
 data Expr =
       ExprNum Float
@@ -51,31 +52,41 @@ data Expr =
 data Proto = Protortpe String [String]
 data Func = Function Proto Expr
 
-parse_primary :: [Token] -> Expr
-parse_primary content = 
-    case content of [] -> error "empty token"
-                    [Number n] -> ExprNum n
-                    [Kwd '(':e:Kwd ')'] -> e
-                    Identy id:stream -> parse_ident id stream
-                    _ -> error "unknown token"
-    where e = parse_expr t
 
-parse_expr :: [Token] -> Expr
-parse_expr content = 
-    case content of prim:stream -> parse_bin 0 lhs stream
-    where lhs = parse_primary prim
+-- parse_top :: [Token] -> [Expr]
+-- parse_top content =
+--     case content of [] -> []
+--                     Kwd ';':stream -> parse_top stream
+--                     _ -> parse_primary content
 
-parse_bin :: Int -> Expr -> [Token] -> Expr
-parse_bin prec lhs content =
-    case content of Kwd c:stream -> if member c precedence then
-                                        if precedence ! c < precedence ! prec then lhs 
-                                        else let rhs = parse_primary stream
-                                                in if 
-                                    else lhs
-                    _ -> lhs
+-- parse_primary :: Int -> [Token] -> Expr
+-- parse_primary stack content = 
+--     case content of [] -> if stack == 0 then lhs else error "unexpected closure"
+--                     Number n:stream -> parse_bin 0 ExprNum n stream
+--                     Kwd '(':stream -> parse_primary (stack + 1) stream
+--                     -- Identy id:stream -> parse_ident id stream
+--                     _ -> error "unknown token"
+                    
+
+-- parse_expr :: [Token] -> Expr
+-- parse_expr content = 
+--     case content of prim:stream -> parse_bin 0 lhs stream
+--                                     where lhs = parse_primary prim
+
+-- parse_bin :: Int -> Int -> Expr -> [Token] -> Expr
+-- parse_bin stack prec lhs content =
+--     case content of Kwd ')':stream -> if stack < 1 then error "unexpected closure"
+--                                         else parse_bin (stack - 1) lhs stream
+--                     Kwd c:stream -> if member c precedence then
+--                                         if precedence ! c < prec then lhs
+--                                         else let rhs = parse_primary stack stream in
+--                                                 parse_bin stack prec ExprBin c lhs rhs stream
+--                                     else lhs
+--                     [] -> lhs
+--                     _ -> 
     
 
 main = do 
-    let tokens = lexer "#comment \n hel77lo67 def 3456 yy "
-        -- in print $ parse_primary tokens
-        in print $ precedence ! '+' < precedence ! '/'
+    let tokens = lexer "#comment \n hel77lo67 def 3456.6 yy "
+        in print tokens
+        -- in print $ precedence ! '+' < precedence ! '/'
