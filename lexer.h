@@ -1,3 +1,4 @@
+#pragma once
 #include <memory>
 #include <string>
 #include <vector>
@@ -10,7 +11,7 @@ private:
 public:
     enum class Type {
         Identifier,
-        Comment,
+        //Comment,
         Separator,
         Operator,
         Literal,
@@ -19,9 +20,11 @@ public:
 
     Token::Type type;
     std::shared_ptr<void> data;
-    Token::Token(const Token::Type&, std::shared_ptr<void> = nullptr);
 
-    std::ostream &operator<<(std::ostream&, const Token&);
+    template<typename T>
+    Token(const Token::Type&, std::shared_ptr<T> = nullptr);
+
+    friend std::ostream &operator<<(std::ostream&, const Token&);
 };
 
 
@@ -36,9 +39,8 @@ public:
 
     void prepare(const std::string&);
     void print();
-    bool parse_iden(std::string::iterator&, std::string& buffer));
+    bool parse_iden(std::string::iterator&, std::string& buffer);
     bool parse_liter(std::string::iterator&, std::string& buffer);
-    bool parse_comm(std::string::iterator&);
     bool parse_rec(std::string::iterator&);
     bool parse();
 };
