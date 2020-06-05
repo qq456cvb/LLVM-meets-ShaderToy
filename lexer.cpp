@@ -6,6 +6,11 @@ Token::Token(const Token::Type& t, std::shared_ptr<T> ptr) : type(t), data(ptr)
 {
 }
 
+template<typename T>
+const T& get_data() {
+    return *std::static_pointer_cast<T>(data);
+}
+
 std::ostream &operator<<(std::ostream& os, const Token& t) {
     std::string type_str;
     switch (t.type)
@@ -21,9 +26,9 @@ std::ostream &operator<<(std::ostream& os, const Token& t) {
     default:
         break;
     }
-    if (t.type == Token::Type::Identifier || t.type == Token::Type::Keyword)    os << type_str << ": " << *std::static_pointer_cast<std::string>(t.data);
-    else if (t.type == Token::Type::Separator || t.type == Token::Type::Operator)    os << type_str << ": " << *std::static_pointer_cast<char>(t.data);
-    else if (t.type == Token::Type::Literal)    os << type_str << ": " << *std::static_pointer_cast<double>(t.data);
+    if (t.type == Token::Type::Identifier || t.type == Token::Type::Keyword || t.type == Token::Type::Qualifier)    os << type_str << ": " << t.get_data<std::string>();
+    else if (t.type == Token::Type::Separator || t.type == Token::Type::Operator)    os << type_str << ": " << t.get_data<char>();
+    else if (t.type == Token::Type::Literal)    os << type_str << ": " << t.get_data<double>();
     return os;
 }
 
@@ -49,7 +54,7 @@ bool Lexer::parse_liter(std::string::iterator& it, std::string& buffer) {
     try
     {
         double value = std::stod(buffer);
-        tokens.emplace_back(Token::Type::Literal, std::make_shared<double>(value));
+        tokens.emplace_back(new Token(Token::Type::Literal, std::make_shared<double>(value)));
         return parse_rec(it);
     }
     catch (const std::exception&)
@@ -66,13 +71,15 @@ bool Lexer::parse_iden(std::string::iterator& it, std::string& buffer) {
         return parse_iden(++it, buffer);
     }
     
-    if (buffer == "const" || buffer == "float" || buffer == "int" || buffer == "vec2" || buffer == "vec3" || buffer == "vec4"
-        || buffer == "in" || buffer == "out" || buffer == "return" || buffer == "if" || buffer == "else" || buffer == "while") {
-        tokens.emplace_back(Token::Type::Keyword, std::make_shared<std::string>(buffer));
+    if (buffer == "const" || buffer == "in" || buffer == "out" || buffer == "return" || buffer == "if" || buffer == "else" || buffer == "while") {
+        tokens.emplace_back(new Token(Token::Type::Keyword, std::make_shared<std::string>(buffer)));
         return parse_rec(it);
     }
+    else if (buffer == "float" || buffer == "int" || buffer == "vec2" || buffer == "vec3" || buffer == "vec4") {
+        tokens.emplace_back(new Token(Token::Type::Qualifier, std::make_shared<std::string>(buffer)));
+    }
     else {
-        tokens.emplace_back(Token::Type::Identifier, std::make_shared<std::string>(buffer));
+        tokens.emplace_back(new Token(Token::Type::Identifier, std::make_shared<std::string>(buffer)));
         return parse_rec(it);
     }
 }
@@ -92,11 +99,11 @@ bool Lexer::parse_rec(std::string::iterator& it) {
             }
             return true;
         }
-        tokens.emplace_back(Token::Type::Operator, std::make_shared<char>(first));
+        tokens.emplace_back(new Token(Token::Type::Operator, std::make_shared<char>(first)));
         return parse_rec(++it);
     }
     if (first == '{' || first == '}' || first == '(' || first == ')' || first == ';' || first == ',') {
-        tokens.emplace_back(Token::Type::Separator, std::make_shared<char>(first));
+        tokens.emplace_back(new Token(Token::Type::Separator, std::make_shared<char>(first)));
         return parse_rec(++it);
     }
     if ((first >= 'A' && first <= 'Z') || (first >= 'a' && first <= 'z')) {
@@ -105,8 +112,8 @@ bool Lexer::parse_rec(std::string::iterator& it) {
         return parse_iden(++it, buf);
     }
     if ((first >= '0' && first <= '9') || first == '.' ) {
-        if (first == '.' && tokens.back().type == Token::Type::Identifier) {
-            tokens.emplace_back(Token::Type::Separator, std::make_shared<char>(first));
+        if (first == '.' && tokens.back()->type == Token::Type::Identifier) {
+            tokens.emplace_back(new Token(Token::Type::Separator, std::make_shared<char>(first)));
             return parse_rec(++it);
         }
         std::string buf{ "" };
@@ -122,7 +129,7 @@ bool Lexer::parse() {
 
 void Lexer::print() {
     for (const auto& t : tokens) {
-        std::cout << t << ", ";
+        std::cout << *t << ", ";
     }
 }
 

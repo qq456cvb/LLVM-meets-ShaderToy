@@ -15,7 +15,8 @@ public:
         Separator,
         Operator,
         Literal,
-        Keyword
+        Keyword,
+        Qualifier
     };
 
     Token::Type type;
@@ -24,6 +25,9 @@ public:
     template<typename T>
     Token(const Token::Type&, std::shared_ptr<T> = nullptr);
 
+    template<typename T>
+    const T& get_data() const;
+
     friend std::ostream &operator<<(std::ostream&, const Token&);
 };
 
@@ -31,7 +35,7 @@ public:
 
 class Lexer
 {
-    std::vector<Token> tokens;
+    std::vector<std::shared_ptr<Token>> tokens;
     std::string str;
 public:
     Lexer();
