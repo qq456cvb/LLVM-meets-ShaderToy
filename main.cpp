@@ -1,3 +1,4 @@
+#include "parser.h"
 #include "lexer.h"
 #include <fstream>
 #include <sstream>
@@ -11,6 +12,10 @@ int main() {
     lexer.prepare(buffer.str());
     lexer.parse();
     lexer.print();
+
+    Parser parser;
+    parser.parse_program(lexer.tokens);
+    parser.print();
     return 0;
 }
 

@@ -35,12 +35,11 @@ public:
 
 class Lexer
 {
-    std::vector<std::shared_ptr<Token>> tokens;
     std::string str;
 public:
     Lexer();
     ~Lexer();
-
+    std::vector<std::shared_ptr<Token>> tokens;
     void prepare(const std::string&);
     void print();
     bool parse_iden(std::string::iterator&, std::string& buffer);

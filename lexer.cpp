@@ -7,7 +7,7 @@ Token::Token(const Token::Type& t, std::shared_ptr<T> ptr) : type(t), data(ptr)
 }
 
 template<typename T>
-const T& get_data() {
+const T& Token::get_data() const {
     return *std::static_pointer_cast<T>(data);
 }
 
@@ -22,6 +22,7 @@ std::ostream &operator<<(std::ostream& os, const Token& t) {
         SET_CASE(Operator)
         SET_CASE(Literal)
         SET_CASE(Keyword)
+        SET_CASE(Qualifier)
 #undef SET_CASE
     default:
         break;
@@ -77,6 +78,7 @@ bool Lexer::parse_iden(std::string::iterator& it, std::string& buffer) {
     }
     else if (buffer == "float" || buffer == "int" || buffer == "vec2" || buffer == "vec3" || buffer == "vec4") {
         tokens.emplace_back(new Token(Token::Type::Qualifier, std::make_shared<std::string>(buffer)));
+        return parse_rec(it);
     }
     else {
         tokens.emplace_back(new Token(Token::Type::Identifier, std::make_shared<std::string>(buffer)));
@@ -102,7 +104,7 @@ bool Lexer::parse_rec(std::string::iterator& it) {
         tokens.emplace_back(new Token(Token::Type::Operator, std::make_shared<char>(first)));
         return parse_rec(++it);
     }
-    if (first == '{' || first == '}' || first == '(' || first == ')' || first == ';' || first == ',') {
+    if (first == '{' || first == '}' || first == '(' || first == ')' || first == ';' || first == ',' || first == '.') {
         tokens.emplace_back(new Token(Token::Type::Separator, std::make_shared<char>(first)));
         return parse_rec(++it);
     }
@@ -111,11 +113,7 @@ bool Lexer::parse_rec(std::string::iterator& it) {
         buf += first;
         return parse_iden(++it, buf);
     }
-    if ((first >= '0' && first <= '9') || first == '.' ) {
-        if (first == '.' && tokens.back()->type == Token::Type::Identifier) {
-            tokens.emplace_back(new Token(Token::Type::Separator, std::make_shared<char>(first)));
-            return parse_rec(++it);
-        }
+    if ((first >= '0' && first <= '9')) {
         std::string buf{ "" };
         buf += first;
         return parse_liter(++it, buf);
@@ -129,7 +127,7 @@ bool Lexer::parse() {
 
 void Lexer::print() {
     for (const auto& t : tokens) {
-        std::cout << *t << ", ";
+        std::cout << *t << " | ";
     }
 }
 
