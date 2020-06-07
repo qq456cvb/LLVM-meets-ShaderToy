@@ -1,4 +1,4 @@
-#include "parser.h"
+﻿#include "parser.h"
 #include "lexer.h"
 #include <iostream>
 
@@ -28,7 +28,7 @@ std::ostream &operator<<(std::ostream& os, const ASTNode& n) {
     default:
         break;
     }
-    if (n.type == ASTNode::Type::Basic || n.type == ASTNode::Type::Call)
+    if (n.type == ASTNode::Type::Basic || n.type == ASTNode::Type::Call || n.type == ASTNode::Type::Def || n.type == ASTNode::Type::Expr)
     {
         os << type_str << ", " << *n.token << std::endl;
     }
@@ -309,7 +309,7 @@ std::shared_ptr<ASTNode> Parser::parse_decl_single(std::vector<std::shared_ptr<T
         next = get_next(it);
     } 
     if (next->type != Token::Type::Qualifier) throw std::exception("");
-    param->children.push_back(std::make_shared<ASTNode>(ASTNode::Type::Basic, next));
+    param->token = next;
     next = get_next(it);
     if (next->type != Token::Type::Identifier) throw std::exception("");
     param->children.push_back(std::make_shared<ASTNode>(ASTNode::Type::Basic, next));

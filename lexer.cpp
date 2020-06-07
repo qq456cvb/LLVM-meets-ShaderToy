@@ -105,6 +105,11 @@ bool Lexer::parse_rec(std::string::iterator& it) {
         return parse_rec(++it);
     }
     if (first == '{' || first == '}' || first == '(' || first == ')' || first == ';' || first == ',' || first == '.') {
+        if (first == '.' && it+1 != str.end() && *(it + 1) >= '0' && *(it + 1) <= '9')
+        {
+            std::string buf{ "." };
+            return parse_liter(++it, buf);
+        }
         tokens.emplace_back(new Token(Token::Type::Separator, std::make_shared<char>(first)));
         return parse_rec(++it);
     }
