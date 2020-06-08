@@ -204,26 +204,30 @@ std::shared_ptr<ASTNode> Parser::parse_factor(std::vector<std::shared_ptr<Token>
 
 std::shared_ptr<ASTNode> Parser::parse_primary(std::vector<std::shared_ptr<Token>>::const_iterator& it) {
     auto next = peek_next(it);
+    std::shared_ptr<ASTNode> node;
     if (next->type == Token::Type::Separator)
     {
-        return parse_expr(++it);
+        node = parse_expr(++it);
     } 
     else if (next->type == Token::Type::Literal || next->type == Token::Type::Identifier)
     {
         auto nextnext = peek_next(it + 1);
         if (nextnext && nextnext->type == Token::Type::Separator && nextnext->get_data<char>() == '(')
         {
-            return parse_func_call(it);
+            node = parse_func_call(it);
         }
-        it++;
-        return std::make_shared<ASTNode>(ASTNode::Type::Basic, next);
+        else
+        {
+            it++;
+            node = std::make_shared<ASTNode>(ASTNode::Type::Basic, next);
+        }
     }
     else if (next->type == Token::Type::Qualifier) 
     {
         auto nextnext = peek_next(it + 1);
         if (nextnext && nextnext->type == Token::Type::Separator && nextnext->get_data<char>() == '(')
         {
-            return parse_func_call(it);
+            node = parse_func_call(it);
         } 
         else 
         {
@@ -232,6 +236,38 @@ std::shared_ptr<ASTNode> Parser::parse_primary(std::vector<std::shared_ptr<Token
     }
     else {
         throw std::exception();
+    }
+    auto rest = parse_primary_rest(it);
+    if (rest)
+    {
+        node->children.push_back(rest);
+    }
+    return node;
+}
+
+std::shared_ptr<ASTNode> Parser::parse_primary_rest(std::vector<std::shared_ptr<Token>>::const_iterator& it) {
+    auto next = peek_next(it);
+    if (next->type == Token::Type::Separator && next->get_data<char>() == '.')
+    {
+        auto node = std::make_shared<ASTNode>(ASTNode::Type::Expr);
+        node->token = next;
+        it++;
+        next = get_next(it);
+        if (next->type != Token::Type::Identifier)
+        {
+            throw std::exception();
+        }
+        node->children.push_back(std::make_shared<ASTNode>(ASTNode::Type::Basic, next));
+        auto rest = parse_primary_rest(it);
+        if (rest)
+        {
+            node->children.push_back(rest);
+        }
+        return node;
+    }
+    else 
+    {
+        return nullptr;
     }
 }
 

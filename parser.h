@@ -53,6 +53,7 @@ private:
     std::shared_ptr<ASTNode> parse_expr_rec(std::vector<std::shared_ptr<Token>>::const_iterator&, std::shared_ptr<ASTNode>, int prec);
     std::shared_ptr<ASTNode> parse_factor(std::vector<std::shared_ptr<Token>>::const_iterator&);
     std::shared_ptr<ASTNode> parse_primary(std::vector<std::shared_ptr<Token>>::const_iterator&);
+    std::shared_ptr<ASTNode> parse_primary_rest(std::vector<std::shared_ptr<Token>>::const_iterator&);  // remove left recursion
     std::shared_ptr<ASTNode> parse_func_call(std::vector<std::shared_ptr<Token>>::const_iterator&);
     std::shared_ptr<ASTNode> parse_statment(std::vector<std::shared_ptr<Token>>::const_iterator&);
     std::shared_ptr<ASTNode> parse_if_statment(std::vector<std::shared_ptr<Token>>::const_iterator&);
