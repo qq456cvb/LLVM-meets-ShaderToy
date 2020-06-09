@@ -148,7 +148,6 @@ std::shared_ptr<ASTNode> Parser::parse_var_decl_single(std::vector<std::shared_p
 }
 
 std::shared_ptr<ASTNode> Parser::parse_expr(std::vector<std::shared_ptr<Token>>::const_iterator& it) {
-    auto expr = std::make_shared<ASTNode>(ASTNode::Type::Expr);
     auto left = parse_factor(it);
     return parse_expr_rec(it, left, 0);
 }
@@ -162,19 +161,24 @@ std::shared_ptr<ASTNode> Parser::parse_expr_rec(std::vector<std::shared_ptr<Toke
     it++;
     auto expr = std::make_shared<ASTNode>(ASTNode::Type::Expr);
     auto op_prec = precedence_map[next_op->get_data<char>()];
-    if (op_prec > prec)
+    if (op_prec < prec)
     {
-        expr->token = next_op;
-        expr->children.push_back(left);
-        auto right_left = parse_factor(it);
-        expr->children.push_back(parse_expr_rec(it, right_left, op_prec));
-        return expr;
+        return left;
     }
     else
     {
+        auto right = parse_factor(it);
+        auto next_next_op = peek_next(it);
+        if (next_next_op && next_next_op->type == Token::Type::Operator)
+        {
+            if (precedence_map[next_next_op->get_data<char>()] > op_prec)
+            {
+                right = parse_expr_rec(it, right, op_prec);
+            }
+        }
         expr->token = next_op;
         expr->children.push_back(left);
-        expr->children.push_back(parse_factor(it));
+        expr->children.push_back(right);
         return parse_expr_rec(it, expr, prec);
     }
 }
@@ -304,6 +308,11 @@ std::shared_ptr<ASTNode> Parser::parse_statment(std::vector<std::shared_ptr<Toke
         {
             std::shared_ptr<ASTNode> node = std::make_shared<ASTNode>(ASTNode::Type::Return);
             node->children.push_back(parse_expr(++it));
+            next = get_next(it);
+            if (next->type != Token::Type::Separator || next->get_data<char>() != ';')
+            {
+                throw std::exception();
+            }
             return node;
         }
         else

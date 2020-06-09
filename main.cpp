@@ -9,8 +9,7 @@ int main() {
     buffer << t.rdbuf();
 
     Lexer lexer;
-    lexer.prepare(buffer.str());
-    lexer.parse();
+    lexer.parse(buffer.str());
     lexer.print();
 
     Parser parser;

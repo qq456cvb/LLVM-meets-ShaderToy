@@ -41,12 +41,8 @@ Lexer::~Lexer()
 {
 }
 
-void Lexer::prepare(const std::string& s) {
-    str = s;
-}
 
-
-bool Lexer::parse_liter(std::string::iterator& it, std::string& buffer) {
+bool Lexer::parse_liter(std::string::const_iterator& it, std::string& buffer) {
     auto& first = *it;
     if ((first >= '0' && first <= '9') || first == '.') {
         buffer += first;
@@ -65,7 +61,7 @@ bool Lexer::parse_liter(std::string::iterator& it, std::string& buffer) {
     }
 }
 
-bool Lexer::parse_iden(std::string::iterator& it, std::string& buffer) {
+bool Lexer::parse_iden(std::string::const_iterator& it, std::string& buffer) {
     auto& first = *it;
     if ((first >= '0' && first <= '9') || (first >= 'A' && first <= 'Z') || (first >= 'a' && first <= 'z')) {
         buffer += first;
@@ -86,16 +82,16 @@ bool Lexer::parse_iden(std::string::iterator& it, std::string& buffer) {
     }
 }
 
-bool Lexer::parse_rec(std::string::iterator& it) {
-    if (it == str.end()) return true;
+bool Lexer::parse_rec(std::string::const_iterator& it) {
+    if (it == end) return true;
     auto& first = *it;
     if (first == ' ' || first == '\n' || first == '\r' || first == '\t') {
         return parse_rec(++it);
     }
     if (first == '*' || first == '/' || first == '+' || first == '-' || first == '=' || first == '<' || first == '>') {
-        if (*it == '/' && it + 1 != str.end() && *(it + 1) == '/') {
+        if (*it == '/' && it + 1 != end && *(it + 1) == '/') {
             auto itt = it + 2;
-            while (itt != str.end()) {
+            while (itt != end) {
                 if (*itt == '\n') return parse_rec(++itt);
                 itt++;
             }
@@ -105,7 +101,7 @@ bool Lexer::parse_rec(std::string::iterator& it) {
         return parse_rec(++it);
     }
     if (first == '{' || first == '}' || first == '(' || first == ')' || first == ';' || first == ',' || first == '.') {
-        if (first == '.' && it+1 != str.end() && *(it + 1) >= '0' && *(it + 1) <= '9')
+        if (first == '.' && it+1 != end && *(it + 1) >= '0' && *(it + 1) <= '9')
         {
             std::string buf{ "." };
             return parse_liter(++it, buf);
@@ -125,8 +121,9 @@ bool Lexer::parse_rec(std::string::iterator& it) {
     }
 }
 
-bool Lexer::parse() {
+bool Lexer::parse(const std::string& str) {
     auto it = str.begin();
+    end = str.end();
     return parse_rec(it);
 }
 

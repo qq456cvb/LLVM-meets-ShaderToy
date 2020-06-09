@@ -35,16 +35,15 @@ public:
 
 class Lexer
 {
-    std::string str;
+    std::string::const_iterator end;
 public:
     Lexer();
     ~Lexer();
     std::vector<std::shared_ptr<Token>> tokens;
-    void prepare(const std::string&);
     void print();
-    bool parse_iden(std::string::iterator&, std::string& buffer);
-    bool parse_liter(std::string::iterator&, std::string& buffer);
-    bool parse_rec(std::string::iterator&);
-    bool parse();
+    bool parse_iden(std::string::const_iterator&, std::string& buffer);
+    bool parse_liter(std::string::const_iterator&, std::string& buffer);
+    bool parse_rec(std::string::const_iterator&);
+    bool parse(const std::string&);
 };
 
