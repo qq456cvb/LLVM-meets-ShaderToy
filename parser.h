@@ -19,6 +19,7 @@ public:
         Def,
         Compound,
         Ifelse,
+        For,
         While,
         Basic
     };
@@ -57,15 +58,16 @@ private:
     std::shared_ptr<ASTNode> parse_func_call(std::vector<std::shared_ptr<Token>>::const_iterator&);
     std::shared_ptr<ASTNode> parse_statment(std::vector<std::shared_ptr<Token>>::const_iterator&);
     std::shared_ptr<ASTNode> parse_if_statment(std::vector<std::shared_ptr<Token>>::const_iterator&);
+    std::shared_ptr<ASTNode> parse_for_statment(std::vector<std::shared_ptr<Token>>::const_iterator&);
     std::shared_ptr<ASTNode> parse_while_statment(std::vector<std::shared_ptr<Token>>::const_iterator&);
     void print_rec(const std::shared_ptr<ASTNode>&, int indent);
 
-    std::unordered_map<char, int> precedence_map{
-        { '+', 10 },
-        { '-', 10 },
-        { '*', 20 },
-        { '/', 20 },
-        { '=', 100 },
+    std::unordered_map<std::string, int> precedence_map{
+        { "+", 10 },
+        { "-", 10 },
+        { "*", 20 },
+        { "/", 20 },
+        { "=", 100 },
     };
 };
 

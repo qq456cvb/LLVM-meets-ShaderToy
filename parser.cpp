@@ -22,6 +22,7 @@ std::ostream &operator<<(std::ostream& os, const ASTNode& n) {
         SET_CASE(Def)
         SET_CASE(Compound)
         SET_CASE(Ifelse)
+        SET_CASE(For)
         SET_CASE(While)
         SET_CASE(Basic)
 #undef SET_CASE
@@ -73,7 +74,7 @@ std::shared_ptr<ASTNode> Parser::parse_decl(std::vector<std::shared_ptr<Token>>:
                 else if ((*itt)->get_data<char>() == ';') return parse_var_decl(it);
                 else throw std::exception("");
             }
-            else if ((*itt)->type == Token::Type::Operator && (*itt)->get_data<char>() == '=') {
+            else if ((*itt)->type == Token::Type::Operator && (*itt)->get_data<std::string>() == "=") {
                 return parse_var_decl(it);
             }
             else {
@@ -140,7 +141,7 @@ std::shared_ptr<ASTNode> Parser::parse_var_decl_single(std::vector<std::shared_p
     next = peek_next(it);
     if (next->type == Token::Type::Operator)
     {
-        if (next->get_data<char>() != '=') throw std::exception();
+        if (next->get_data<std::string>() != "=") throw std::exception();
         node->token = next;
         node->children.push_back(parse_expr(++it));
     }
@@ -160,7 +161,7 @@ std::shared_ptr<ASTNode> Parser::parse_expr_rec(std::vector<std::shared_ptr<Toke
     }
     it++;
     auto expr = std::make_shared<ASTNode>(ASTNode::Type::Expr);
-    auto op_prec = precedence_map[next_op->get_data<char>()];
+    auto op_prec = precedence_map[next_op->get_data<std::string>()];
     if (op_prec < prec)
     {
         return left;
@@ -171,7 +172,7 @@ std::shared_ptr<ASTNode> Parser::parse_expr_rec(std::vector<std::shared_ptr<Toke
         auto next_next_op = peek_next(it);
         if (next_next_op && next_next_op->type == Token::Type::Operator)
         {
-            if (precedence_map[next_next_op->get_data<char>()] > op_prec)
+            if (precedence_map[next_next_op->get_data<std::string>()] > op_prec)
             {
                 right = parse_expr_rec(it, right, op_prec);
             }
@@ -187,7 +188,8 @@ std::shared_ptr<ASTNode> Parser::parse_factor(std::vector<std::shared_ptr<Token>
     auto next = peek_next(it);
     if (next->type == Token::Type::Operator)
     {
-        if (next->get_data<char>() == '-' || next->get_data<char>() == '+')
+        if (next->get_data<std::string>() == "-" || next->get_data<std::string>() == "+"
+            || next->get_data<std::string>() == "--" || next->get_data<std::string>() == "++")
         {
             std::shared_ptr<ASTNode> factor = std::make_shared<ASTNode>(ASTNode::Type::Factor);
             factor->token = next;
@@ -269,6 +271,18 @@ std::shared_ptr<ASTNode> Parser::parse_primary_rest(std::vector<std::shared_ptr<
         }
         return node;
     }
+    else if (next->type == Token::Type::Operator && (next->get_data<std::string>() == "--" || next->get_data<std::string>() == "++"))
+    {
+        auto node = std::make_shared<ASTNode>(ASTNode::Type::Expr);
+        node->token = next;
+        it++;
+        auto rest = parse_primary_rest(it);
+        if (rest)
+        {
+            node->children.push_back(rest);
+        }
+        return node;
+    }
     else 
     {
         return nullptr;
@@ -299,6 +313,10 @@ std::shared_ptr<ASTNode> Parser::parse_statment(std::vector<std::shared_ptr<Toke
         if (word == "if")
         {
             return parse_if_statment(it);
+        }
+        else if (word == "for")
+        {
+            return parse_for_statment(it);
         }
         else if (word == "while")
         {
@@ -408,6 +426,40 @@ std::shared_ptr<ASTNode> Parser::parse_if_statment(std::vector<std::shared_ptr<T
         auto else_statement = parse_body(++it);
         node->children.push_back(else_statement);
     }
+    return node;
+}
+
+std::shared_ptr<ASTNode> Parser::parse_for_statment(std::vector<std::shared_ptr<Token>>::const_iterator& it) {
+    get_next(it);
+    get_next(it);  // TODO: error check
+    auto ifvar = peek_next(it);
+    auto node = std::make_shared<ASTNode>(ASTNode::Type::For);
+    if ((ifvar->type == Token::Type::Keyword && ifvar->get_data<std::string>() == "const") || ifvar->type == Token::Type::Qualifier)
+    {
+        node->children.push_back(parse_var_decl(it));
+    }
+    else
+    {
+        node->children.push_back(parse_expr(it));
+        auto semi = get_next(it);
+        if (semi->type != Token::Type::Separator || semi->get_data<char>() != ';')
+        {
+            throw std::exception();
+        }
+    }
+    
+    node->children.push_back(parse_expr(it));
+    auto next_semi = get_next(it);
+    if (next_semi->type != Token::Type::Separator || next_semi->get_data<char>() != ';')
+    {
+        throw std::exception();
+    }
+    node->children.push_back(parse_expr(it));
+    get_next(it);
+    get_next(it);
+    auto statement = parse_body(it);
+    get_next(it);
+    node->children.push_back(statement);
     return node;
 }
 

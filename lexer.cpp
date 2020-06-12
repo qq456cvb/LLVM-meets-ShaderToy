@@ -27,8 +27,8 @@ std::ostream &operator<<(std::ostream& os, const Token& t) {
     default:
         break;
     }
-    if (t.type == Token::Type::Identifier || t.type == Token::Type::Keyword || t.type == Token::Type::Qualifier)    os << type_str << ": " << t.get_data<std::string>();
-    else if (t.type == Token::Type::Separator || t.type == Token::Type::Operator)    os << type_str << ": " << t.get_data<char>();
+    if (t.type == Token::Type::Identifier || t.type == Token::Type::Keyword || t.type == Token::Type::Qualifier || t.type == Token::Type::Operator)    os << type_str << ": " << t.get_data<std::string>();
+    else if (t.type == Token::Type::Separator)    os << type_str << ": " << t.get_data<char>();
     else if (t.type == Token::Type::Literal)    os << type_str << ": " << t.get_data<double>();
     return os;
 }
@@ -52,7 +52,7 @@ bool Lexer::parse_liter(std::string::const_iterator& it, std::string& buffer) {
     {
         double value = std::stod(buffer);
         tokens.emplace_back(new Token(Token::Type::Literal, std::make_shared<double>(value)));
-        return parse_rec(it);
+        return true;
     }
     catch (const std::exception&)
     {
@@ -68,63 +68,77 @@ bool Lexer::parse_iden(std::string::const_iterator& it, std::string& buffer) {
         return parse_iden(++it, buffer);
     }
     
-    if (buffer == "const" || buffer == "in" || buffer == "out" || buffer == "return" || buffer == "if" || buffer == "else" || buffer == "while") {
+    if (buffer == "const" || buffer == "in" || buffer == "out" || buffer == "return" || buffer == "if" || buffer == "else" || buffer == "for" || buffer == "while") {
         tokens.emplace_back(new Token(Token::Type::Keyword, std::make_shared<std::string>(buffer)));
-        return parse_rec(it);
+        return true;
     }
     else if (buffer == "float" || buffer == "int" || buffer == "vec2" || buffer == "vec3" || buffer == "vec4") {
         tokens.emplace_back(new Token(Token::Type::Qualifier, std::make_shared<std::string>(buffer)));
-        return parse_rec(it);
+        return true;
     }
     else {
         tokens.emplace_back(new Token(Token::Type::Identifier, std::make_shared<std::string>(buffer)));
-        return parse_rec(it);
-    }
-}
-
-bool Lexer::parse_rec(std::string::const_iterator& it) {
-    if (it == end) return true;
-    auto& first = *it;
-    if (first == ' ' || first == '\n' || first == '\r' || first == '\t') {
-        return parse_rec(++it);
-    }
-    if (first == '*' || first == '/' || first == '+' || first == '-' || first == '=' || first == '<' || first == '>') {
-        if (*it == '/' && it + 1 != end && *(it + 1) == '/') {
-            auto itt = it + 2;
-            while (itt != end) {
-                if (*itt == '\n') return parse_rec(++itt);
-                itt++;
-            }
-            return true;
-        }
-        tokens.emplace_back(new Token(Token::Type::Operator, std::make_shared<char>(first)));
-        return parse_rec(++it);
-    }
-    if (first == '{' || first == '}' || first == '(' || first == ')' || first == ';' || first == ',' || first == '.') {
-        if (first == '.' && it+1 != end && *(it + 1) >= '0' && *(it + 1) <= '9')
-        {
-            std::string buf{ "." };
-            return parse_liter(++it, buf);
-        }
-        tokens.emplace_back(new Token(Token::Type::Separator, std::make_shared<char>(first)));
-        return parse_rec(++it);
-    }
-    if ((first >= 'A' && first <= 'Z') || (first >= 'a' && first <= 'z')) {
-        std::string buf{ "" };
-        buf += first;
-        return parse_iden(++it, buf);
-    }
-    if ((first >= '0' && first <= '9')) {
-        std::string buf{ "" };
-        buf += first;
-        return parse_liter(++it, buf);
+        return true;
     }
 }
 
 bool Lexer::parse(const std::string& str) {
     auto it = str.begin();
     end = str.end();
-    return parse_rec(it);
+    while (it != end)
+    {
+        auto& first = *it;
+        if (first == ' ' || first == '\n' || first == '\r' || first == '\t') {
+            it++;
+            continue;
+        }
+        if (first == '*' || first == '/' || first == '+' || first == '-' || first == '=' || first == '<' || first == '>') {
+            std::string op(1, first);
+            if (it + 1 != end) {
+                if (*it == '/' && *(it + 1) == '/') {
+                    auto itt = it + 2;
+                    while (itt != end) {
+                        if (*itt == '\n') {
+                            it = ++itt;
+                            break;
+                        }
+                        itt++;
+                    }
+                }
+                else if ((*(it + 1) == '=') || (*it == '+' && *(it + 1) == '+') || (*it == '-' && *(it + 1) == '-'))
+                {
+                    op.push_back(*(++it));
+                }
+            }
+            tokens.emplace_back(new Token(Token::Type::Operator, std::make_shared<std::string>(op)));
+            it++;
+            continue;
+        }
+        if (first == '{' || first == '}' || first == '(' || first == ')' || first == ';' || first == ',' || first == '.') {
+            if (first == '.' && it + 1 != end && *(it + 1) >= '0' && *(it + 1) <= '9')
+            {
+                std::string buf{ "." };
+                parse_liter(++it, buf);
+                continue;
+            }
+            tokens.emplace_back(new Token(Token::Type::Separator, std::make_shared<char>(first)));
+            it++;
+            continue;
+        }
+        if ((first >= 'A' && first <= 'Z') || (first >= 'a' && first <= 'z')) {
+            std::string buf{ "" };
+            buf += first;
+            parse_iden(++it, buf);
+            continue;
+        }
+        if ((first >= '0' && first <= '9')) {
+            std::string buf{ "" };
+            buf += first;
+            parse_liter(++it, buf);
+            continue;
+        }
+    }
+    return true;
 }
 
 void Lexer::print() {
