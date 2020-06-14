@@ -214,6 +214,7 @@ std::shared_ptr<ASTNode> Parser::parse_primary(std::vector<std::shared_ptr<Token
     if (next->type == Token::Type::Separator)
     {
         node = parse_expr(++it);
+        it++;
     } 
     else if (next->type == Token::Type::Literal || next->type == Token::Type::Identifier)
     {

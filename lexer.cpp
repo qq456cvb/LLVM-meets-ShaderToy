@@ -94,12 +94,14 @@ bool Lexer::parse(const std::string& str) {
         }
         if (first == '*' || first == '/' || first == '+' || first == '-' || first == '=' || first == '<' || first == '>') {
             std::string op(1, first);
+            bool is_comm = false;
             if (it + 1 != end) {
                 if (*it == '/' && *(it + 1) == '/') {
                     auto itt = it + 2;
                     while (itt != end) {
                         if (*itt == '\n') {
                             it = ++itt;
+                            is_comm = true;
                             break;
                         }
                         itt++;
@@ -109,6 +111,10 @@ bool Lexer::parse(const std::string& str) {
                 {
                     op.push_back(*(++it));
                 }
+            }
+            if (is_comm)
+            {
+                continue;
             }
             tokens.emplace_back(new Token(Token::Type::Operator, std::make_shared<std::string>(op)));
             it++;
