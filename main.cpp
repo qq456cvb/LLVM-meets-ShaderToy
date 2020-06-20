@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "lexer.h"
+#include "preprocess.h"
 #include <fstream>
 #include <sstream>
 
@@ -8,13 +9,19 @@ int main() {
     std::stringstream buffer;
     buffer << t.rdbuf();
 
-    Lexer lexer;
-    lexer.parse(buffer.str());
-    lexer.print();
+    auto content = buffer.str();
+    Preprocessor processor;
+    processor.process(content);
 
-    Parser parser;
-    parser.parse_program(lexer.tokens);
-    parser.print();
+    std::cout << content << std::endl;
+
+    //Lexer lexer;
+    //lexer.parse(content);
+    //lexer.print();
+
+    //Parser parser;
+    //parser.parse_program(lexer.tokens);
+    //parser.print();
     return 0;
 }
 
