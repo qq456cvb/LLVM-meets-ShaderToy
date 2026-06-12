@@ -1,33 +1,18 @@
 # LLVM-meets-ShaderToy
 
-<!-- README refined by Cursor -->
+A from-scratch compiler frontend for ShaderToy-style GLSL, written in C++ with no parser generator. The end goal was to translate ShaderToy fragment shaders into other targets (C++, LLVM IR) for CPU execution; what's implemented is the frontend pipeline up to an AST.
 
-This is a repo that converts shader code on ShaderToy to other source code (C++, LLVM, etc.))
+## Pipeline
 
-## Overview
-
-This repository contains C++ code from an older research, course, or prototype project. The README has been refreshed to make the repository easier to scan while preserving the original notes below.
-
-## Repository Contents
-
-- Top-level source files and project assets.
-
-## Setup
-
-- This legacy repo does not pin a full environment. Start from the language/toolchain implied by the source files, then install missing packages as reported by the runtime.
+- `preprocess.cpp` — a minimal preprocessor handling `#define` macro substitution (the only directive ShaderToy code typically needs).
+- `lexer.cpp` — a hand-rolled tokenizer producing identifier, literal, operator, separator, keyword, and qualifier tokens.
+- `parser.cpp` — a recursive-descent parser with operator-precedence climbing for expressions and explicit left-recursion elimination, building a generic `ASTNode` tree. It handles function/variable declarations (including GLSL parameter qualifiers like `in`), compound statements, `if`/`else`, `for`, `while`, function calls, and assignment, and can pretty-print the AST with indentation.
+- `test.txt` — the test input: a real ShaderToy fragment shader (an FBM-noise fire effect using `iTime`/`iChannel0`) exercising macros, vector types, swizzles, and control flow.
 
 ## Usage
 
-- inspect the source directories listed below; many of these older repos were kept as research prototypes rather than packaged applications.
-
-## Data and Artifacts
-
-No new large artifact is stored in this repository. If a dataset or checkpoint is required, follow the links and notes in the original section below.
+Compile the four `.cpp` files with any C++14 compiler and run from the directory containing `src/test.txt` (the input path is hardcoded in `main.cpp`). As committed, `main.cpp` runs only the preprocessor and prints the expanded source; uncomment the `Lexer`/`Parser` blocks to tokenize and dump the AST.
 
 ## Status
 
-This is a `Batch C` cleanup pass for a legacy repository. Commands may require dependency/version adjustments on a modern machine.
-
-## License
-
-No explicit license file was found in this checkout; check the original project context before reusing code.
+Frontend-only prototype, parked before code generation: despite the name, no LLVM (or C++) backend was ever wired up — the AST is where it ends.
